@@ -16,7 +16,7 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
@@ -26,8 +26,7 @@ export default function SignupPage() {
         email,
         password,
         options: {
-          // This ensures the redirect works on the live site
-          emailRedirectTo: 'https://yestick.vercel.app/login',
+          emailRedirectTo: window.location.origin, // This fixes it!
         },
       });
 
@@ -37,9 +36,10 @@ export default function SignupPage() {
       } else {
         if (data.session) {
           router.push('/dashboard');
-          router.refresh();
         } else {
-          router.push('/login');
+          // If email confirmation is ON, just tell them to check email
+          setError("Account created! Please check your email to confirm.");
+          setLoading(false);
         }
       }
     } catch (err) {
@@ -47,7 +47,6 @@ export default function SignupPage() {
       setLoading(false);
     }
   };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <Card className="w-full max-w-md">

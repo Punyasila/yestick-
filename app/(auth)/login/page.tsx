@@ -31,7 +31,6 @@ export default function LoginPage() {
         setError(error.message);
         setLoading(false);
       } else {
-        // JUST PUSH. NO REFRESH! This stops the "Rendering..." loop.
         router.push('/dashboard');
       }
     } catch (err) {
