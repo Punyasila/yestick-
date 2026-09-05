@@ -21,24 +21,30 @@ export default function SignupPage() {
     setError(null);
     setLoading(true);
 
-    // Directly using Supabase client
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          // This ensures the redirect works on the live site
+          emailRedirectTo: 'https://yestick.vercel.app/login',
+        },
+      });
 
-    if (error) {
-      setError(error.message);
-      setLoading(false);
-    } else {
-      // If a session is returned, they are immediately logged in.
-      if (data.session) {
-        router.push('/dashboard');
-        router.refresh(); // Crucial for Next.js 16 to update the cookies
+      if (error) {
+        setError(error.message);
+        setLoading(false);
       } else {
-        // If no session, we just push to login (because email confirmation is likely ON or blocked)
-        router.push('/login');
+        if (data.session) {
+          router.push('/dashboard');
+          router.refresh();
+        } else {
+          router.push('/login');
+        }
       }
+    } catch (err) {
+      setError('Network error or server unreachable. Please try again.');
+      setLoading(false);
     }
   };
 
