@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { supabase } from '@/app/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,21 +21,22 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
 
-    // NO NETWORK REQUEST - checks against local browser storage
-    const storedUser = localStorage.getItem('yestick_user');
-    if (storedUser) {
-      const user = JSON.parse(storedUser);
-      if (user.email === email && user.password === password) {
-        setLoading(false);
-        router.push('/dashboard');
-        return;
-      }
-    }
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    // If no stored user, just let them in for the demo
-    localStorage.setItem('yestick_user', JSON.stringify({ email, password }));
-    setLoading(false);
-    router.push('/dashboard');
+      if (error) {
+        setError(error.message);
+        setLoading(false);
+      } else {
+        router.push('/dashboard');
+      }
+    } catch (err) {
+      setError('Network error or server unreachable. Please try again.');
+      setLoading(false);
+    }
   };
 
   return (

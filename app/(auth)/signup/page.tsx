@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { supabase } from '@/app/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,11 +21,27 @@ export default function SignupPage() {
     setError(null);
     setLoading(true);
 
-    // NO NETWORK REQUEST - saves to local browser storage
-    localStorage.setItem('yestick_user', JSON.stringify({ email, password }));
-    
-    setLoading(false);
-    router.push('/dashboard');
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      if (error) {
+        setError(error.message);
+        setLoading(false);
+      } else {
+        if (data.session) {
+          router.push('/dashboard');
+        } else {
+          // Turned off "Confirm email" in Supabase, so this should not happen, but it's a fallback.
+          router.push('/login');
+        }
+      }
+    } catch (err) {
+      setError('Network error or server unreachable. Please try again.');
+      setLoading(false);
+    }
   };
 
   return (
