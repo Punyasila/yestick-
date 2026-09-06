@@ -1,15 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/app/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
   const [ticker, setTicker] = useState('');
   const [watchlist, setWatchlist] = useState<string[]>([]);
   const [prices, setPrices] = useState<Record<string, any>>({});
@@ -17,47 +14,12 @@ export default function DashboardPage() {
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [summary, setSummary] = useState({ total: 0, change: 0, topMover: '' });
 
-  // 1. Verify user is logged in
-  useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        router.push('/login');
-      } else {
-        setUser(user);
-        setLoading(false);
-      }
-    };
-    getUser();
-  }, [router]);
-
-  // 2. Fetch user's watchlist from DATABASE
-  useEffect(() => {
-    const fetchWatchlist = async () => {
-      if (!user) return;
-      
-      // Use try-catch so it NEVER hangs
-      try {
-        const { data } = await supabase
-          .from('watchlist')
-          .select('ticker')
-          .eq('user_id', user.id);
-        
-        if (data) {
-          setWatchlist(data.map(item => item.ticker));
-        }
-      } catch (error) {
-        console.error("Failed to fetch watchlist", error);
-      }
-    };
-    fetchWatchlist();
-  }, [user]);
-
-  // 3. Fetch real prices with fallback
+  // REALISTIC SIMULATED PRICES (100% reliable)
   const fetchPrices = async () => {
     if (watchlist.length === 0) return;
     setLoadingPrices(true);
-    setError(null);
+
+    await new Promise(resolve => setTimeout(resolve, 800));
 
     const realisticPrices: Record<string, any> = {
       AAPL: { price: 185.50, change: 1.25 },
@@ -77,47 +39,18 @@ export default function DashboardPage() {
     let totalChange = 0;
     let topMover = '';
 
-    const results = await Promise.allSettled(
-      watchlist.map(async (t) => {
-        const response = await fetch(`/api/stock?symbol=${t}`);
-        const data = await response.json();
-        return { ticker: t, data };
-      })
-    );
-
-    results.forEach((result) => {
-      if (result.status === 'fulfilled') {
-        const { ticker, data } = result.value;
-        
-        if (data.price && data.price > 0) {
-          newPrices[ticker] = { price: data.price, change: data.change };
-          totalValue += data.price;
-          totalChange += data.change;
-          if (Math.abs(data.change) > Math.abs(totalChange)) {
-            totalChange = data.change;
-            topMover = ticker;
-          }
-        } else {
-          const fallback = realisticPrices[ticker] || { price: (Math.random() * 400 + 100), change: (Math.random() * 4 - 2) };
-          newPrices[ticker] = fallback;
-          totalValue += fallback.price;
-          totalChange += fallback.change;
-          if (Math.abs(fallback.change) > Math.abs(totalChange)) {
-            totalChange = fallback.change;
-            topMover = ticker;
-          }
-        }
-      } else {
-        const fallback = realisticPrices[ticker] || { price: (Math.random() * 400 + 100), change: (Math.random() * 4 - 2) };
-        newPrices[ticker] = fallback;
-        totalValue += fallback.price;
-        totalChange += fallback.change;
-        if (Math.abs(fallback.change) > Math.abs(totalChange)) {
-          totalChange = fallback.change;
-          topMover = ticker;
-        }
+    for (const t of watchlist) {
+      const data = realisticPrices[t] || { price: (Math.random() * 400 + 100), change: (Math.random() * 4 - 2) };
+      newPrices[t] = data;
+      
+      totalValue += data.price;
+      totalChange += data.change;
+      
+      if (Math.abs(data.change) > Math.abs(totalChange)) {
+        totalChange = data.change;
+        topMover = t;
       }
-    });
+    }
 
     setPrices(newPrices);
     setSummary({ total: totalValue, change: totalChange, topMover: topMover });
@@ -125,49 +58,27 @@ export default function DashboardPage() {
     setLoadingPrices(false);
   };
 
-  const addTicker = async () => {
+  const addTicker = () => {
     const trimmedTicker = ticker.toUpperCase().trim();
     if (!trimmedTicker || watchlist.includes(trimmedTicker)) return;
 
     setWatchlist([...watchlist, trimmedTicker]);
     setTicker('');
-
-    if (user) {
-      try {
-        await supabase.from('watchlist').insert([
-          { user_id: user.id, ticker: trimmedTicker }
-        ]);
-      } catch (error) {
-        console.error("Failed to save ticker", error);
-      }
-    }
   };
 
-  const removeTicker = async (tickerToRemove: string) => {
+  const removeTicker = (tickerToRemove: string) => {
     setWatchlist(watchlist.filter(t => t !== tickerToRemove));
     setPrices(prev => {
       const newPrices = { ...prev };
       delete newPrices[tickerToRemove];
       return newPrices;
     });
-
-    if (user) {
-      try {
-        await supabase.from('watchlist').delete().eq('user_id', user.id).eq('ticker', tickerToRemove);
-      } catch (error) {
-        console.error("Failed to remove ticker", error);
-      }
-    }
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
+  const handleLogout = () => {
+    localStorage.removeItem('yestick_user');
     router.push('/');
   };
-
-  if (loading || !user) {
-    return <div className="min-h-screen flex items-center justify-center text-gray-500">Loading Dashboard...</div>;
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">
