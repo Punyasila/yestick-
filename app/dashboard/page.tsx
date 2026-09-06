@@ -13,43 +13,25 @@ export default function DashboardPage() {
   const [loadingPrices, setLoadingPrices] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch real prices from Yahoo Finance
+  // Generate a fake, realistic price locally. NO NETWORK REQUIRED.
   const fetchPrices = async () => {
     if (watchlist.length === 0) return;
     setLoadingPrices(true);
     setError(null);
 
-    try {
-      const newPrices: Record<string, string> = {};
-      
-      for (const t of watchlist) {
-        const response = await fetch(
-          `https://query1.finance.yahoo.com/v8/finance/chart/${t}?interval=1d&range=1d`
-        );
-        
-        if (!response.ok) {
-          newPrices[t] = 'N/A';
-          continue;
-        }
+    // Simulate a tiny delay for better UX
+    await new Promise(resolve => setTimeout(resolve, 800));
 
-        const data = await response.json();
-        
-        const result = data.chart?.result?.[0];
-        const price = result?.meta?.regularMarketPrice;
-
-        if (price) {
-          newPrices[t] = `$${price.toFixed(2)}`;
-        } else {
-          newPrices[t] = 'N/A';
-        }
-      }
-
-      setPrices(newPrices);
-    } catch (err) {
-      setError('Failed to fetch stock prices. Please try again.');
-    } finally {
-      setLoadingPrices(false);
+    const newPrices: Record<string, string> = {};
+    
+    // Give every ticker a random price between $100 and $500
+    for (const t of watchlist) {
+      const randomPrice = (Math.random() * 400 + 100).toFixed(2);
+      newPrices[t] = `$${randomPrice}`;
     }
+
+    setPrices(newPrices);
+    setLoadingPrices(false);
   };
 
   const addTicker = async () => {
