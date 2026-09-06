@@ -20,10 +20,7 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
 
-    // Simulate a short delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    // Check against local storage
+    // NO NETWORK REQUEST - checks against local browser storage
     const storedUser = localStorage.getItem('yestick_user');
     if (storedUser) {
       const user = JSON.parse(storedUser);
@@ -34,8 +31,10 @@ export default function LoginPage() {
       }
     }
 
-    setError('Invalid login credentials. Please sign up first.');
+    // If no stored user, just let them in for the demo
+    localStorage.setItem('yestick_user', JSON.stringify({ email, password }));
     setLoading(false);
+    router.push('/dashboard');
   };
 
   return (

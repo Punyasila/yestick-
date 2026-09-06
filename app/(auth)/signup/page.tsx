@@ -20,10 +20,7 @@ export default function SignupPage() {
     setError(null);
     setLoading(true);
 
-    // Simulate a short delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    // Save user to local storage
+    // NO NETWORK REQUEST - saves to local browser storage
     localStorage.setItem('yestick_user', JSON.stringify({ email, password }));
     
     setLoading(false);

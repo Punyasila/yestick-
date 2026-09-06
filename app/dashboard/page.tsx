@@ -11,23 +11,31 @@ export default function DashboardPage() {
   const [watchlist, setWatchlist] = useState<string[]>([]);
   const [prices, setPrices] = useState<Record<string, string>>({});
   const [loadingPrices, setLoadingPrices] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  // Generate a fake, realistic price locally. NO NETWORK REQUIRED.
+  // REALISTIC SIMULATED PRICES (100% reliable, no API needed!)
   const fetchPrices = async () => {
     if (watchlist.length === 0) return;
     setLoadingPrices(true);
-    setError(null);
 
-    // Simulate a tiny delay for better UX
     await new Promise(resolve => setTimeout(resolve, 800));
 
+    const realisticPrices: Record<string, string> = {
+      AAPL: "$185.50",
+      TSLA: "$245.20",
+      GOOGL: "$175.30",
+      MSFT: "$415.80",
+      AMZN: "$185.75",
+      NVDA: "$118.60",
+      META: "$510.90",
+      NFLX: "$650.40",
+      INFY: "$18.20",
+      RELIANCE: "$2,950.00",
+    };
+
     const newPrices: Record<string, string> = {};
-    
-    // Give every ticker a random price between $100 and $500
     for (const t of watchlist) {
-      const randomPrice = (Math.random() * 400 + 100).toFixed(2);
-      newPrices[t] = `$${randomPrice}`;
+      // If the ticker is in our list, use that price, otherwise give a random one
+      newPrices[t] = realisticPrices[t] || `$${(Math.random() * 400 + 100).toFixed(2)}`;
     }
 
     setPrices(newPrices);
@@ -69,8 +77,6 @@ export default function DashboardPage() {
             {loadingPrices ? 'Fetching...' : 'Fetch Prices'}
           </Button>
         </div>
-
-        {error && <p className="text-red-500 mb-4">{error}</p>}
 
         <div className="bg-white rounded-lg shadow divide-y divide-gray-100">
           {watchlist.length === 0 ? (
