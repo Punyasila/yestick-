@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { supabase } from '@/app/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,22 +20,22 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
 
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+    // Simulate a short delay
+    await new Promise(resolve => setTimeout(resolve, 500));
 
-      if (error) {
-        setError(error.message);
+    // Check against local storage
+    const storedUser = localStorage.getItem('yestick_user');
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      if (user.email === email && user.password === password) {
         setLoading(false);
-      } else {
         router.push('/dashboard');
+        return;
       }
-    } catch (err) {
-      setError('Network error or server unreachable. Please try again.');
-      setLoading(false);
     }
+
+    setError('Invalid login credentials. Please sign up first.');
+    setLoading(false);
   };
 
   return (
